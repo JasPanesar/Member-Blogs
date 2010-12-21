@@ -3,14 +3,14 @@
 	<name>Member Blogs</name>
 	<package>memberblogs</package>
 	<loadPriority>5</loadPriority>
-	<version>1.0.0</version>
+	<version>1.0.2</version>
 	<provider>Steve Good</provider>
 	<providerURL>http://stevegood.org/</providerURL>
 	<category>User Generated Content</category>
 	<settings />
 	<EventHandlers>
-		<eventHandler event="onGlobalRequestStart" component="eventHandlers.MainEventHandler" persist="true"/>
-		<eventHandler event="onSiteRequestStart" component="eventHandlers.MainEventHandler" persist="true"/>
+		<eventHandler event="onGlobalRequestStart" component="eventHandlers.MainEventHandler" persist="true" />
+		<eventHandler event="onSiteRequestStart" component="eventHandlers.MainEventHandler" persist="true" />
 		<eventHandler event="onAdminModuleNav" component="eventHandlers.MainEventHandler" persist="true" />
 		<eventHandler event="onAddMemberBlogRequest" component="eventHandlers.MainEventHandler" persist="true" />
 	</EventHandlers>
