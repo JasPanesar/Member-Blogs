@@ -1,26 +1,28 @@
 <cfcomponent extends="mura.plugin.pluginGenericEventHandler">
 	
 	<cffunction name="onApplicationLoad" access="public" returntype="void" output="false">
-		<cfif structKeyExists(session,'memberblogs')>
-			<cfset structDelete(session,'memberblogs') />
-		</cfif>
-	</cffunction>
-	
-	<cffunction name="onGlobalRequestStart" access="public" returntype="void" output="false">
-		<cfargument name="event" />
 		<cfset var local = {} />
-		<cfif structKeyExists(session,'siteid')>
-		<cfset local.key = hash(session.siteid) />
-			<cfif !structKeyExists(variables,local.key)>
-				<cfset initSettings() />
-			</cfif>
-			<cfset arguments.event.setValue(local.key, variables[local.key]) />
-		</cfif>
+		<cfset cacheRemove("memberblogs_settingsservice",false) />
+		<cfset local.settingsService = createObject("component","memberblogs.org.stevegood.settings.SettingsService").init(expandPath(variables.configBean.getContext() & '/plugins/' & variables.pluginConfig.getDirectory() & '/configFiles')) />
+		
+		<cfset local['settings'] = {} />
+		<cfset local.settings['useModeration'] = true />
+		<cfset local.settings['requireLogin'] = true />
+		<cfset local.settings['allowEdit'] = true />
+		<cfset local.settings['moderateEdits'] = false />
+		<cfset local.settings['parentid'] = "" />
+		
+		<cfset local.settingsService.setValue('defaultSettings',local.settings) />
+		<cfset cachePut('memberblogs_settingsservice',local.settingsService) />
 	</cffunction>
 	
 	<cffunction name="onSiteRequestStart" access="public" returntype="void" output="false">
 		<cfargument name="event" />
-		<cfset onGlobalRequestStart(arguments.event) />
+		
+		<cfset var local = {} />
+		<cfset local.settingsService = cacheGet("memberblogs_settingsservice") />
+		<cfset local.key = hash(request.siteid) />
+		<cfset arguments.event.setValue(local.key, local.settingsService.getValue(local.key)) />
 	</cffunction>
 	
 	<cffunction name="onAdminModuleNav" access="public" returntype="string" output="false">
@@ -30,69 +32,84 @@
 	
 	<cffunction name="onRetrieveMBSettings" access="public" returntype="void" output="false">
 		<cfargument name="event" />
+		
 		<cfset var local = {} />
+		<cfset local.settingsService = cacheGet("memberblogs_settingsservice") />
 		<cfset local.key = hash(session.siteid) />
-		<cfset arguments.event.setValue(local.key, variables[local.key]) />
-	</cffunction>
-	
-	<cffunction name="onAddMemberBlogRequest" access="public" returntype="void" output="false">
-		<cfargument name="event" />
-		<!--- TODO: Write the codez! --->
+		<cfset arguments.event.setValue(local.key, local.settingsService.getValue(local.key)) />
 	</cffunction>
 	
 	<cffunction name="onSaveMBPluginSettings" access="public" returntype="void" output="false">
 		<cfargument name="event" />
+		
 		<cfset var local = {} />
-		<cfset local.key = hash(session.siteid) />
+		<cfset local.key = 'mb_' & hash(session.siteid) />
 		<cfif isValid("Struct",event.getValue(local.key))>
-			<cfset initSettings(event.getValue(local.key)) />
+			<cfset saveSettings(event.getValue(local.key)) />
 		</cfif>
-		<cfset arguments.event.setValue(local.key, variables[local.key]) />
 	</cffunction>
 	
-	<cffunction name="initSettings" access="private" returntype="void" output="false">
-		<cfargument name="settings" type="struct" required="false" default="#StructNew()#" />
+	<cffunction name="saveSettings" access="private" returntype="void" output="false">
+		<cfargument name="newSettings" type="struct" required="true" />
 		
 		<cfset var local = {} />
 		<cfset local.key = hash(session.siteid) />
-		<cfset local.filePath = expandPath(variables.configBean.getContext() & '/plugins/' & variables.pluginConfig.getDirectory() & '/configFiles') />
-		<cfset local.fileName = local.key & '.cfm' />
-		<cfset local.fullPath = local.filePath & '/' & local.fileName />
-		<cfset local['settings'] = {} />
-		<cfset local.settings['useModeration'] = true />
-		<cfset local.settings['requireLogin'] = true />
-		<cfset local.settings['allowEdit'] = true />
-		<cfset local.settings['moderateEdits'] = false />
+		<cfset local.settingsService = cacheGet("memberblogs_settingsservice") />
 		
-		<cfif len(structKeyList(arguments.settings))>
-			<cfset local.newKeys = structKeyList(arguments.settings) />
-			<cfset local.defaultKeys = structKeyList(local.settings) />
-			
-			<cfloop list="#local.newKeys#" index="local.key">
-				<cfset local.settings[local.key] = arguments.settings[local.key] />
-			</cfloop>
-		</cfif>
+		<cfset local.settings = duplicate(local.settingsService.getValue('defaultSettings')) />
 		
-		<cfif !directoryExists(local.filePath)>
-			<cfdirectory action="create" directory="#local.filePath#" />
-			<cfset local.abortTag = "<cfabort />" />
-			<cfsavecontent variable="local.appCFM">
-				<cfoutput>#local.abortTag#</cfoutput>
-			</cfsavecontent>
-			<cffile action="write" file="#local.filePath#/Application.cfm" output="#trim(local.appCFM)#" />
-		</cfif>
+		<cfset local.newKeys = structKeyList(arguments.newSettings) />
+		<cfset local.defaultKeys = structKeyList(local.settings) />
 		
-		<cfif fileExists(local.fullPath) && !len(structKeyList(arguments.settings))>
-			<cffile action="read" file="#local.fullPath#" variable="local.settingsFile" />
-			<cfset local.settings = deserializejson(local.settingsFile) />
-			<cftry>
-				<cfcatch><!--- We do nothing for now ---></cfcatch>
-			</cftry>
-		<cfelse>
-			<cffile action="write" file="#local.fullPath#" output="#serializejson(local.settings)#" />
-		</cfif>
+		<cfloop list="#local.newKeys#" index="local.settings_key">
+			<cfset local.settings[local.settings_key] = arguments.newSettings[local.settings_key] />
+		</cfloop>
 		
-		<cfset variables[local.key] = local.settings />
+		<cfset local.settingsService.setValue(local.key,local.settings,true) />
+		<cfset cachePut("memberblogs_settingsservice",local.settingsService) />
 	</cffunction>
-
+	
+	<cffunction name="onAddMemberBlogRequest" access="public" returntype="void" output="false">
+		<cfargument name="event" />
+		
+		<cfset var local = {} />
+		<cfset local.settingsService = cacheGet('memberblogs_settingsservice') />
+		<cfset local.settings = local.settingService.getValue(hash(session.siteid)) />
+		<cfset local.contentBean = application.contentManager.getBean() />
+		
+		<cfset local.contentBean.setDisplay(!local.settings.useModeration) />
+		<cfset local.contentBean.setTitle(arguments.event.getValue('title')) />
+		<cfset local.contentBean.setParentID(local.settings.parentid) />
+		<cfset local.contentBean.setFileName(arguments.event.getValue('url')) />
+		<cfset local.contentBean.setType('Link') />
+		<cfset local.contentBean.setTarget('_blank') />
+		<cfset local.contentBean.save() />
+	</cffunction>
+	
+	<cffunction name="onMemberBlogApprove" access="public" returntype="void" output="false">
+		<cfargument name="event" />
+		
+		<cfset var local = {} />
+		<cfset local.content = application.contentManager.read(contentid=arguments.event.getValue('contentid'),siteid=session.siteid) />
+		<cfset local.content.setDisplay(1) />
+		<cfset local.content.save() />
+	</cffunction>
+	
+	<cffunction name="onMemberBlogRevoke" access="public" returntype="void" output="false">
+		<cfargument name="event" />
+		
+		<cfset var local = {} />
+		<cfset local.content = application.contentManager.read(contentid=arguments.event.getValue('contentid'),siteid=session.siteid) />
+		<cfset local.content.setDisplay(0) />
+		<cfset local.content.save() />
+	</cffunction>
+	
+	<cffunction name="onMemberBlogDelete" access="public" returntype="void" output="false">
+		<cfargument name="event" />
+		
+		<cfset var local = {} />
+		<cfset local.content = application.contentManager.read(contentid=arguments.event.getValue('contentid'),siteid=session.siteid) />
+		<cfset local.content.delete() />
+	</cffunction>
+	
 </cfcomponent>
