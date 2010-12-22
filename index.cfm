@@ -25,6 +25,7 @@
 			<cfset actionEvent = createObject("component","mura.event").init(eventData) />
 			<cfset $.setEvent(actionEvent) />
 			<cfset $.announceEvent('onMemberBlog#url.action#',actionEvent) />
+			<cflocation url="#application.configBean.getContext()#/plugins/#request.pluginConfig.getDirectory()#/" addtoken="false" />
 		</cfif>
 		
 		<cfset getSettingsEvent = createObject("component","mura.event").init() />
@@ -78,7 +79,7 @@
 			<ul style="list-style:none;">
 				<cfloop condition="kids.hasNext()">
 					<cfset kid = kids.next() />
-					<li style="padding: 5px 5px 5px 5px;background: url(#application.configBean.getContext()#/admin/images/rule_dotted.gif) repeat-x scroll left top transparent; background-color:###kid.getDisplay() ? 'fff' : 'fe0' #;">
+					<li style="padding: 5px 5px 5px 5px;background: url(#application.configBean.getContext()#/admin/images/rule_dotted.gif) repeat-x scroll left top transparent; background-color:###kid.getDisplay() ? 'fff' : 'FCF86D' #;">
 						<div><a href="#kid.getFileName()#"><strong>#kid.getTitle()#</strong> (#kid.getFileName()#)</a></div>
 						<div>#kid.getSummary()#</div>
 						<cfif kid.getDisplay()>

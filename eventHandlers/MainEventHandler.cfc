@@ -74,13 +74,17 @@
 		
 		<cfset var local = {} />
 		<cfset local.settingsService = cacheGet('memberblogs_settingsservice') />
-		<cfset local.settings = local.settingService.getValue(hash(session.siteid)) />
+		<cfset local.settings = local.settingsService.getValue(hash(session.siteid)) />
 		<cfset local.contentBean = application.contentManager.getBean() />
 		
+		
+		
+		<cfset local.contentBean.setSiteID(session.siteid) />
 		<cfset local.contentBean.setDisplay(!local.settings.useModeration) />
 		<cfset local.contentBean.setTitle(arguments.event.getValue('title')) />
 		<cfset local.contentBean.setParentID(local.settings.parentid) />
-		<cfset local.contentBean.setFileName(arguments.event.getValue('url')) />
+		<cfset local.contentBean.setFileName(arguments.event.getValue('burl')) />
+		<cfset local.contentBean.setSummary(arguments.event.getValue('summary')) />
 		<cfset local.contentBean.setType('Link') />
 		<cfset local.contentBean.setTarget('_blank') />
 		<cfset local.contentBean.save() />
