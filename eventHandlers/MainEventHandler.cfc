@@ -77,14 +77,13 @@
 		<cfset local.settings = local.settingsService.getValue(hash(session.siteid)) />
 		<cfset local.contentBean = application.contentManager.getBean() />
 		
-		
-		
 		<cfset local.contentBean.setSiteID(session.siteid) />
-		<cfset local.contentBean.setDisplay(!local.settings.useModeration) />
+		<cfset local.contentBean.setApproved(local.settings.useModeration ? 0 : 1) />
+		<cfset local.contentBean.setDisplay(local.settings.useModeration ? 0 : 1) />
 		<cfset local.contentBean.setTitle(arguments.event.getValue('title')) />
 		<cfset local.contentBean.setParentID(local.settings.parentid) />
 		<cfset local.contentBean.setFileName(arguments.event.getValue('burl')) />
-		<cfset local.contentBean.setSummary(arguments.event.getValue('summary')) />
+		<cfset local.contentBean.setSummary('<p>' & arguments.event.getValue('summary') & '</p>') />
 		<cfset local.contentBean.setType('Link') />
 		<cfset local.contentBean.setTarget('_blank') />
 		<cfset local.contentBean.save() />

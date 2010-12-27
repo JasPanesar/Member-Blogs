@@ -5,21 +5,43 @@
 
 <cfsilent>
 	
-	<cfif structKeyExists(form,'title')>
+	<cfset settings = $.event(hash(session.siteid)) />
+	
+	<cfset canHazAccess = false />
+	<cfif !canHazAccess && settings.requireLogin && $.currentUser().isLoggedIn()>
+		<cfset canHazAccess = true />
+	</cfif>
+	<cfif !canHazAccess && !settings.requireLogin>
+		<cfset canHazAccess = true />
+	</cfif>
+	
+	<cfif structKeyExists(form,'title') && canHazAccess>
 		<cfset saveEvent = createObject("component","mura.event").init(form)>
 		<cfset $.announceEvent('onAddMemberBlogRequest',saveEvent) />
+		<cfset session.memberblogs.submitted_blog = true />
+		<cflocation url="#$.currentURL()#" addtoken="false" />
 	</cfif>
 	
 	<cfset $.loadJSLib() />
-	<cfset settings = $.event(hash(session.siteid)) />
+	
+	<cfset message = "" />
+	<cfif structKeyExists(session, 'memberblogs') && structKeyExists(session.memberblogs,'submitted_blog') && session.memberblogs.submitted_blog>
+		<cfif settings.useModeration>
+			<cfset message = "Your submission has been recorded and is awaiting moderation. Thank you!" />
+		<cfelse>
+			<cfset message = "Your blog has been added!" />
+		</cfif>
+	</cfif>
 </cfsilent>
 <div class="gadget" id="memberBlogs">
-<cfif settings.requireLogin && $.currentUser().isLoggedIn()>
+<cfif canHazAccess>
 	<a href="javascript:void(0);" id="addlink" class="button">Add Your Blog</a>
 <cfelse>
 	<a href="?display=login">Login</a> to add your blog
 </cfif>
 </div>
+
+<cfif canHazAccess>
 <cfoutput>
 <div id="addMemberBlogForm" class="hidden" style="display:none;">
 	<form action="" method="post">
@@ -56,5 +78,9 @@ jQuery(function($){
 			width:515
 		});
 	});
+	<cfif len(message)>
+	alert(<cfoutput>"#message#"</cfoutput>);
+	</cfif>
 });
 </script>
+</cfif>

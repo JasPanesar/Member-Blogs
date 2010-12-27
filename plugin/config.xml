@@ -3,7 +3,7 @@
 	<name>Member Blogs</name>
 	<package>memberblogs</package>
 	<loadPriority>5</loadPriority>
-	<version>1.0.15</version>
+	<version>1.0.18</version>
 	<provider>Steve Good</provider>
 	<providerURL>http://stevegood.org/</providerURL>
 	<category>User Generated Content</category>
